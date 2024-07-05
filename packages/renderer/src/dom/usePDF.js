@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 
-import queue from 'queue';
+import Queue from 'queue';
 import { useState, useRef, useEffect, useCallback } from 'react';
 
 import { pdf } from '../index';
@@ -23,7 +23,7 @@ export const usePDF = ({ document } = {}) => {
 
   // Setup rendering queue
   useEffect(() => {
-    const renderQueue = queue({ autostart: true, concurrency: 1 });
+    const renderQueue = new Queue({ autostart: true, concurrency: 1 });
 
     const queueDocumentRender = () => {
       setState((prev) => ({ ...prev, loading: true }));
@@ -38,9 +38,10 @@ export const usePDF = ({ document } = {}) => {
       setState((prev) => ({ ...prev, loading: false, error }));
     };
 
-    const onRenderSuccessful = (blob) => {
+    const onRenderSuccessful = (e) => {
+      const blob = e.detail.result?.[0] || null;
       setState({
-        blob,
+        blob: blob,
         error: null,
         loading: false,
         url: URL.createObjectURL(blob),
@@ -53,8 +54,8 @@ export const usePDF = ({ document } = {}) => {
       pdfInstance.current.updateContainer(document);
     }
 
-    renderQueue.on('error', onRenderFailed);
-    renderQueue.on('success', onRenderSuccessful);
+    renderQueue.addEventListener('error', onRenderFailed);
+    renderQueue.addEventListener('success', onRenderSuccessful);
 
     return () => {
       renderQueue.end();
